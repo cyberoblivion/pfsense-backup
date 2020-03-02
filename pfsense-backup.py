@@ -30,8 +30,6 @@ if args.verbose:
 r = s.get("%sindex.php" % host, verify=verify)
 try:
     magic_csrf_token = html.fromstring(r.text).xpath('//input[@name=\'__csrf_magic\']/@value')[0]
-    if args.verbose:
-        print(magic_csrf_token)
 except:
     magic_csrf_token = ""
 if args.verbose:
