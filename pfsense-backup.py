@@ -29,7 +29,9 @@ if args.verbose:
     print('retrieving the "magic" CSRF Token.')
 r = s.get("%sindex.php" % host, verify=verify)
 try:
-    magic_csrf_token = html.fromstring(r.text).xpath('/html/body/div/form/input/@value')[0]
+    magic_csrf_token = html.fromstring(r.text).xpath('//input[@name=\'__csrf_magic\']/@value')[0]
+    if args.verbose:
+        print(magic_csrf_token)
 except:
     magic_csrf_token = ""
 if args.verbose:
@@ -46,13 +48,23 @@ r = s.post("%sindex.php" % host,
                 "login": "Login"
            },
            verify=verify)
+#get new csrf token
+magic_csrf_token = html.fromstring(r.text).xpath('//input[@name=\'__csrf_magic\']/@value')[0]
 if html.fromstring(r.text).xpath('//title/text()')[0].startswith("Login"):
     exit("Login was not Successful!")
 
 # download configuration
 if args.verbose:
     print('retrieving the Configuration File')
-r = s.post("%sdiag_backup.php" % host, data={"Submit": "Download configuration", "donotbackuprrd": "on"}, verify=verify)
+    print(magic_csrf_token)
+r = s.post("%sdiag_backup.php" % host,
+           data={
+               "__csrf_magic": magic_csrf_token,
+               "download": "Download configuration as XML",
+               "encrypt_password": "",
+               "backuparea": "",
+               "donotbackuprrd": "yes"}, verify=verify)
+
 if html.fromstring(r.text).xpath('count(//pfsense)') != 1.0:
     exit("Something went wrong! the returned Content was not a PfSense Configuration File!")
 
